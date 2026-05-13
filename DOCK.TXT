@@ -1,0 +1,1002 @@
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+
+students = [
+    {'id': 1, 'name': 'Ali',  'grade': 'A'},
+    {'id': 2, 'name': 'Sara', 'grade': 'B'},
+]
+next_id = 3
+VALID_GRADES = {'A', 'B', 'C', 'D', 'F'}
+
+# --- HEALTH ---
+@app.route('/api/health')
+def health():
+    return jsonify({'status': 'ok', 'message': 'Flask is running'}), 200
+
+# --- READ ALL ---
+@app.route('/api/students', methods=['GET'])
+def get_students():
+    return jsonify(students), 200
+
+# --- READ ONE ---
+@app.route('/api/students/<int:sid>', methods=['GET'])
+def get_student(sid):
+    s = next((s for s in students if s['id'] == sid), None)
+    return (jsonify(s), 200) if s else (jsonify({'error': 'Not found'}), 404)
+
+# --- CREATE ---
+@app.route('/api/students', methods=['POST'])
+def add_student():
+    global next_id
+    data = request.get_json()
+    if not data or 'name' not in data or 'grade' not in data:
+        return jsonify({'error': 'name and grade required'}), 400
+    if data['grade'] not in VALID_GRADES:
+        return jsonify({'error': 'Invalid grade'}), 400
+    new = {'id': next_id, 'name': data['name'], 'grade': data['grade']}
+    students.append(new)
+    next_id += 1
+    return jsonify(new), 201
+
+# --- UPDATE (full replace) ---
+@app.route('/api/students/<int:sid>', methods=['PUT'])
+def update_student(sid):
+    s = next((s for s in students if s['id'] == sid), None)
+    if not s:
+        return jsonify({'error': 'Not found'}), 404
+    data = request.get_json()
+    s['name']  = data.get('name',  s['name'])
+    s['grade'] = data.get('grade', s['grade'])
+    return jsonify(s), 200
+
+# --- PATCH (partial update) ---
+@app.route('/api/students/<int:sid>', methods=['PATCH'])
+def patch_student(sid):
+    s = next((s for s in students if s['id'] == sid), None)
+    if not s:
+        return jsonify({'error': 'Not found'}), 404
+    data = request.get_json() or {}
+    if 'name'  in data: s['name']  = data['name']
+    if 'grade' in data:
+        if data['grade'] not in VALID_GRADES:
+            return jsonify({'error': 'Invalid grade'}), 400
+        s['grade'] = data['grade']
+    return jsonify(s), 200
+
+# --- DELETE ---
+@app.route('/api/students/<int:sid>', methods=['DELETE'])
+def delete_student(sid):
+    global students
+    orig = len(students)
+    students = [s for s in students if s['id'] != sid]
+    if len(students) == orig:
+        return jsonify({'error': 'Not found'}), 404
+    return jsonify({'message': 'Deleted'}), 200
+
+# --- COUNT ---
+@app.route('/api/students/count')
+def count_students():
+    return jsonify({'count': len(students)}), 200
+
+# --- NAMES ONLY ---
+@app.route('/api/students/names')
+def get_names():
+    return jsonify([s['name'] for s in students]), 200
+
+# --- TOP (grade A only) ---
+@app.route('/api/students/top')
+def top_students():
+    return jsonify([s for s in students if s['grade'] == 'A']), 200
+
+# --- SEARCH by grade ---
+@app.route('/api/students/search')
+def search_students():
+    grade = request.args.get('grade')
+    if not grade:
+        return jsonify({'error': 'grade param required'}), 400
+    return jsonify([s for s in students if s['grade'] == grade]), 200
+
+# --- STATS ---
+@app.route('/api/students/stats')
+def student_stats():
+    counts = {}
+    for s in students:
+        counts[s['grade']] = counts.get(s['grade'], 0) + 1
+    return jsonify({'total': len(students), 'by_grade': counts}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
+curl test commands
+# Quick test of every endpoint:
+$ curl http://localhost:5000/api/health
+$ curl http://localhost:5000/api/students
+$ curl http://localhost:5000/api/students/1
+$ curl http://localhost:5000/api/students/count
+$ curl http://localhost:5000/api/students/names
+$ curl http://localhost:5000/api/students/top
+$ curl "http://localhost:5000/api/students/search?grade=A"
+$ curl http://localhost:5000/api/students/stats
+$ curl -X POST http://localhost:5000/api/students \
+    -H 'Content-Type: application/json' \
+    -d '{"name":"Zara","grade":"A"}'
+$ curl -X PUT http://localhost:5000/api/students/1 \
+    -H 'Content-Type: application/json' \
+    -d '{"name":"Ali","grade":"B"}'
+$ curl -X PATCH http://localhost:5000/api/students/1 \
+    -H 'Content-Type: application/json' \
+    -d '{"grade":"A"}'
+$ curl -X DELETE http://localhost:5000/api/students/2
+
+//////////////////////////////////////////////////////////
+org
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+# Standardized to lowercase keys for consistency
+students = [
+    {'id': 1, 'name': 'Basil', 'grade': 'A'},
+    {'id': 2, 'name': 'Yahya', 'grade': 'A'},
+]
+next_id = 3
+
+@app.route('/api/students', methods=['GET'])
+def get_students():
+    return jsonify(students)
+
+@app.route('/api/students/<int:s_id>', methods=['GET'])
+def get_student(s_id):
+    s = next((s for s in students if s['id'] == s_id), None)
+    # Changed error code to 404 for 'Not Found'
+    return (jsonify(s), 200) if s else (jsonify({'error': 'Not found'}), 404)
+
+@app.route('/api/students', methods=['POST'])
+def add_student():
+    global next_id
+    valid_grade = ['A','B','C','D','F']
+
+    data = request.get_json()
+    
+    if not data or 'name' not in data or 'grade' not in data:
+        return jsonify({'error': 'Data not complete'}), 400 # 400 is better for Bad Request
+
+    if data['grade'].upper() not in valid_grade:
+        return jsonify({'error' : 'Invalid grade'}) ,400
+    new_student = {
+        'id': next_id, 
+        'name': data['name'], 
+        'grade': data['grade']
+    }
+    students.append(new_student)
+    next_id += 1
+
+    return jsonify(new_student), 201 # 201 Created is standard for POST
+
+@app.route('/api/students/count', methods = ['GET'])
+def student_count():    
+    return jsonify({"count" : len(students)}), 200
+
+@app.route('/api/students/search' , methods=['GET'])
+def search_students():
+    grade_query = request.args.get('grade')
+    if not grade_query:
+        return jsonify({'error' : 'Provide a grade'}), 400
+    filtered = [s for s in students if s.get('grade',' ').upper() == grade_query.upper()]
+    return jsonify(filtered), 200
+
+@app.route('/api/health' , methods = ['GET'])
+def health_check():
+    return jsonify({'status' : 'ok' , "message" : 'Flask is running'})
+@app.route('/api/students/<int:s_id>', methods=['PUT'])
+def update_student(s_id):
+    # Fixed the '=' to '==' and ensured the variable name matches (s_id)
+    s = next((s for s in students if s['id'] == s_id), None)
+    
+    if not s:
+        return jsonify({'error': 'Not found'}), 404
+        
+    data = request.get_json()
+    s['name'] = data.get('name', s['name'])
+    s['grade'] = data.get('grade', s['grade'])    
+    
+    return jsonify(s), 200
+
+@app.route('/api/students/<int:sid>', methods=['DELETE'])
+def delete_students(sid):
+    global students
+    original_len = len(students)
+    students = [s for s in students if s['id'] != sid]
+    
+    if len(students) == original_len:
+        return jsonify({'error': 'Not found'}), 404
+        
+    return jsonify({'message': 'Deleted Successfully'}), 200
+
+if __name__ == '__main__':
+    app.run(debug=True,host = '0.0.0.0', port=5000)
+
+---------------------------------------------
+
+# Dockerfile 
+ 
+# Step 1: Start from an official Python base image 
+FROM python:3.11-slim 
+ 
+# Step 2: Set the working directory inside the container 
+WORKDIR /app 
+ 
+# Step 3: Copy the requirements file first (for layer caching) 
+COPY requirements.txt . 
+ 
+# Step 4: Install Python dependencies 
+RUN pip install --no-cache-dir -r requirements.txt 
+ 
+# Step 5: Copy the rest of the application code 
+COPY . . 
+ 
+# Step 6: Tell Docker which port the app listens on (documentation only) 
+EXPOSE 5000 
+ 
+# Step 7: The command to run when the container starts 
+CMD ["python3", "app.py"] 
+
+-----------------------------
+
+# docker-compose.yml 
+version: '3.8' 
+ 
+services: 
+ 
+  # Service 1: Flask backend API 
+  api: 
+    build: ./api              # Build image from ./api/Dockerfile 
+    container_name: flask-api 
+    ports: 
+      - '5000:5000'           # host:container port mapping 
+    environment: 
+      - FLASK_ENV=development 
+    volumes: 
+      - ./api:/app            # Mount code for live reload during dev 
+    networks: - app-network
+ 
+  # Service 2: Simple web server for the frontend 
+  frontend: 
+    image: nginx:alpine       # Use official nginx image directly 
+    container_name: frontend 
+    ports: 
+      - '8080:80'             # Serve frontend on host port 8080 
+    volumes: 
+      - ./frontend:/usr/share/nginx/html  # Mount our HTML files 
+    networks: 
+      - app-network 
+    depends_on: 
+      - api                   # Start api container before frontend 
+ 
+networks: 
+  app-network:               # Custom network so containers can talk 
+    driver: bridge
+
+
+--------------
+
+3.2 Creating Tests for the Flask CRUD API 
+Create a file called test_app.py inside your Flask project: 
+# test_app.py 
+import pytest 
+from app import app 
+ 
+@pytest.fixture 
+def client(): 
+    app.config['TESTING'] = True 
+    with app.test_client() as client: 
+        yield client 
+ 
+# Test 1: Health check endpoint returns 200 
+def test_health_check(client): 
+    response = client.get('/api/health') 
+    assert response.status_code == 200 
+    data = response.get_json() 
+Department of SWE & CYS                                                                        SE202L Development Operations Lab                                          
+Page 99 of 112 
+ 
+    assert data['status'] == 'ok' 
+ 
+# Test 2: Get all students returns a list 
+def test_get_students(client): 
+    response = client.get('/api/students') 
+    assert response.status_code == 200 
+    data = response.get_json() 
+    assert isinstance(data, list) 
+ 
+# Test 3: Get a student that does not exist returns 404 
+def test_get_student_not_found(client): 
+    response = client.get('/api/students/9999') 
+    assert response.status_code == 404 
+ 
+# Test 4: POST a new student with valid data returns 201 
+def test_add_student(client): 
+    new_student = {'name': 'Memoona', 'grade': 'A'} 
+    response = client.post('/api/students', 
+                           json=new_student) 
+    assert response.status_code == 201 
+    data = response.get_json() 
+    assert data['name'] == 'Memoona' 
+ 
+# Test 5: POST without required fields returns 400 
+def test_add_student_missing_field(client): 
+    response = client.post('/api/students', 
+                           json={'name': 'Sara'}) 
+    assert response.status_code == 400 
+ 
+3.3 Running Tests Locally First 
+# Install pytest 
+$ pip3 install pytest 
+ 
+# Run all tests — always verify locally before pushing 
+$ python -m pytest test_app.py -v 
+ 
+# Expected output: 
+# test_app.py::test_health_check          PASSED 
+# test_app.py::test_get_students           PASSED 
+# test_app.py::test_get_student_not_found  PASSED 
+# test_app.py::test_add_student            PASSED 
+# test_app.py::test_add_student_missing_field PASSED 
+# 5 passed in 0.42s 
+
+
+$ mkdir -p .github/workflows 
+$ nano .github/workflows/ci.yml 
+ 
+name: Flask CI Pipeline 
+ 
+on: 
+  push: 
+    branches: [ main ] 
+  pull_request: 
+    branches: [ main ] 
+ 
+jobs: 
+  test: 
+    name: Run Tests 
+    runs-on: ubuntu-latest 
+ 
+    steps: 
+      - name: Checkout repository 
+        uses: actions/checkout@v4 
+ 
+      - name: Set up Python 3.11 
+        uses: actions/setup-python@v5 
+        with: 
+          python-version: '3.11' 
+ 
+      - name: Install dependencies 
+        run: | 
+          pip install --upgrade pip 
+          pip install -r requirements.txt 
+          pip install pytest 
+ 
+Department of SWE & CYS                                                                        SE202L Development Operations Lab                                          
+Page 101 of 112 
+ 
+      - name: Run pytest 
+        run: python -m pytest test_app.py -v 
+ 
+      - name: Verify health endpoint exists 
+        run: python -c "from app import app; assert '/api/health' in [r.rule 
+for r in app.url_map.iter_rules()]" 
+ 
+4.3 Pipeline Stage 2: Build Docker Image 
+Add a second job to the same workflow file that builds the Docker image after tests pass. The needs: 
+test line ensures this job only runs if the test job succeeded. 
+  build-docker: 
+    name: Build Docker Image 
+    runs-on: ubuntu-latest 
+    needs: test              # Only run if the test job passed 
+ 
+    steps: 
+      - name: Checkout repository 
+        uses: actions/checkout@v4 
+ 
+      - name: Build Docker image 
+        run: docker build -t flask-api:${{ github.sha }} . 
+ 
+      - name: Verify container starts correctly 
+        run: | 
+          docker run -d -p 5000:5000 --name test-container \ 
+            flask-api:${{ github.sha }} 
+          sleep 3 
+          curl --fail http://localhost:5000/api/health 
+          docker stop test-container 
+          docker rm test-container 
+
+--------------
+--lab6--
+$ git diff                 # Changes in working tree not yet staged 
+$ git diff --staged        # Changes staged but not yet committed 
+$ git diff a1b2c3d         # Compare current state to a specific commit 
+
+Discard changes in working 
+tree 
+git restore filename Revert file to last committed state 
+Unstage a file git restore --staged filename Remove from staging, keep 
+changes 
+Undo last commit (keep 
+changes) 
+git reset --soft HEAD~1 Move HEAD back, keep files 
+staged 
+Undo last commit (discard 
+changes) 
+git reset --hard HEAD~1 Move HEAD back, discard all 
+changes 
+Fix last commit message git commit --amend -m "new 
+msg" 
+Rewrite the most recent commit 
+
+Discard changes in working 
+tree 
+git restore filename Revert file to last committed state 
+Unstage a file git restore --staged filename Remove from staging, keep 
+changes 
+Undo last commit (keep 
+changes) 
+git reset --soft HEAD~1 Move HEAD back, keep files 
+staged 
+Undo last commit (discard 
+changes) 
+git reset --hard HEAD~1 Move HEAD back, discard all 
+changes 
+
+Fix last commit message git commit --amend -m "new 
+msg" 
+Rewrite the most recent commit 
+
+git remote add origin https://github.com/studentA/student-profiles.git 
+git branch -M main 
+git push -u origin main 
+
+git clone https://github.com/studentA/student-profiles.git 
+cd student-profiles 
+git log --oneline 
+ 
+git add index.html 
+git commit -m "add Student A profile" 
+git push origin profile-studentA 
+
+git add index.html 
+git commit -m "add Student B profile" 
+git push origin profile-studentB 
+ 
+git switch main 
+git pull                           # get Student A's merged changes 
+git switch profile-studentB 
+git merge main                     # this triggers the conflict 
+# Open index.html — find the conflict markers and fix them 
+# Keep BOTH <section> blocks, remove all <<<, ===, >>> lines 
+git add index.html 
+git commit -m "resolve merge conflict — keep both profiles" 
+git push origin profile-studentB 
+git switch main 
+git pull 
+touch README.md 
+git add README.md 
+git commit -m "add README" 
+git push 
+
+---Lab8--
+$ nslookup google.com 
+# More detailed DNS query 
+$ dig google.com 
+ 
+# Quick one-line answer 
+$ dig +short google.com 
+
+# Show all listening ports and the process using them 
+$ ss -tulnp 
+ 
+# Alternative using netstat (older systems) 
+$ netstat -tulnp 
+ 
+# Check if a specific port is in use 
+$ ss -tulnp | grep :5000 
+ 
+# Show all active network connections 
+$ ss -tp 
+
+Traceroute shows every network hop (router) a packet passes through on its way to a destination. It 
+helps diagnose where in the network a connection is slow or failing. 
+$ traceroute google.com 
+
+$ cd ~/devops/week5 && python3 app.py 
+ 
+# In another terminal —> confirm it is listening 
+$ ss -tulnp | grep :5000 
+ 
+# Start Flask on a custom port 
+$ flask run --port=8000 
+ 
+# Bind to all interfaces (0.0.0.0) so other machines on the network can 
+connect 
+$ flask run --host=0.0.0.0 --port=5000 
+ 
+TO RUN FLASK IN BG
+
+Method 1: Using & (simple background job) 
+$ python3 app.py & 
+# [1] 4521   <- Job number and PID 
+ 
+$ jobs         # List background jobs 
+$ fg           # Bring back to foreground 
+$ kill %1      # Kill job number 1 
+ 
+Method 2: Using nohup (survives terminal close) 
+# nohup = 'no hang up' — keeps the process running after logout 
+# Output is redirected to nohup.out automatically 
+$ nohup python3 app.py & 
+ 
+# Check it is running 
+$ ps aux | grep app.py 
+ 
+# Redirect output to a specific log file 
+$ nohup python3 app.py > app.log 2>&1 & 
+ 
+Method 3: Using systemd (production standard) 
+systemd is the Linux service manager. It can start applications automatically at boot, restart them if 
+they crash, and manage their logs. This is how real production services are managed. 
+# Create a service file for your Flask app 
+$ sudo nano /etc/systemd/system/flaskapp.service 
+ 
+[Unit] 
+Description=Samantha Flask App 
+After=network.target 
+ 
+[Service] 
+User=samantha 
+WorkingDirectory=/home/samantha/devops/week5 
+ExecStart=/usr/bin/python3 app.py 
+Restart=always 
+ 
+[Install] 
+WantedBy=multi-user.target 
+ 
+# Reload systemd, enable and start the service 
+$ sudo systemctl daemon-reload 
+$ sudo systemctl enable flaskapp 
+$ sudo systemctl start flaskapp 
+ 
+# Check its status 
+$ sudo systemctl status flaskapp 
+ 
+# Stop and disable 
+$ sudo systemctl stop flaskapp 
+$ sudo systemctl disable flaskapp 
+ 
+3.2 System Logs 
+# Main system log —> everything the OS and services record 
+Department of SWE & CYS                                                                        SE202L Development Operations Lab                                          
+Page 81 of 112 
+ 
+$ sudo cat /var/log/syslog 
+ 
+# Watch it live as new messages arrive 
+$ sudo tail -f /var/log/syslog 
+ 
+# Authentication log —> login attempts, sudo usage 
+$ sudo cat /var/log/auth.log 
+ 
+# Kernel messages —> hardware, drivers, boot 
+$ dmesg | tail -20 
+ 
+# systemd service logs (journalctl) 
+$ sudo journalctl -u flaskapp          # All logs for the flaskapp service 
+$ sudo journalctl -u flaskapp -f       # Follow live logs 
+$ sudo journalctl -u flaskapp --since '10 min ago' 
+
+
+3.4 Searching and Filtering Logs with grep 
+Production logs can contain thousands of lines. grep filters them down to only the lines that matter. 
+# Show only error lines from syslog 
+$ sudo grep 'error' /var/log/syslog 
+ 
+# Case-insensitive search 
+$ sudo grep -i 'error' /var/log/syslog 
+ 
+# Show 3 lines before and after each match (context) 
+$ sudo grep -B 3 -A 3 'ERROR' app.log 
+ 
+# Count how many error lines exist 
+$ sudo grep -c 'error' /var/log/syslog 
+ 
+Department of SWE & CYS                                                                        SE202L Development Operations Lab                                          
+Page 82 of 112 
+ 
+# Combine tail and grep — watch live errors only 
+$ sudo tail -f /var/log/syslog | grep -i 'error' 
+
+4.1 curl for Network Testing 
+You already used curl to test your Flask API in Week 5. It is also a powerful networking tool for 
+checking if a server is reachable and measuring response times. 
+# Basic connectivity check —> is a server responding? 
+$ curl http://localhost:5000/api/health 
+ 
+# Show HTTP response headers 
+$ curl -I http://localhost:5000 
+ 
+# Measure total response time 
+$ curl -o /dev/null -s -w 'Total time: %{time_total}s\n' http://localhost:5000 
+ 
+# Test connectivity to an external server 
+$ curl -I https://github.com 
+ 
+4.2 wget (Downloading Files) 
+wget downloads files from the internet directly to your Linux machine from the terminal. It is useful 
+for downloading configuration files, software packages, or test data onto a server. 
+# Download a file to the current directory 
+$ wget https://example.com/file.zip 
+ 
+# Download and save with a specific filename 
+$ wget -O myfile.zip https://example.com/file.zip 
+ 
+# Download quietly (no progress output) 
+$ wget -q https://example.com/file.txt 
+
+art A: Network Investigation 
+1. Find your machine's IP address 
+$ ip addr show | grep 'inet ' 
+ 
+2. Test connectivity and DNS 
+$ ping -c 4 8.8.8.8 
+$ ping -c 4 github.com 
+$ dig +short github.com 
+ 
+3. Check what ports are currently open on your machine 
+$ ss -tulnp 
+ 
+Part B: Running Flask in the Background 
+4. Navigate to your Week 5 Flask project 
+$ cd ~/devops/week5 
+ 
+5. Start Flask in the background using nohup and redirect output to a log file 
+$ nohup python3 app.py > flask_app.log 2>&1 & 
+$ echo "Flask PID: $!" 
+ 
+6. Confirm the process is running and the port is open 
+$ ps aux | grep app.py 
+$ ss -tulnp | grep :5000 
+ 
+7. Send a request and watch the log update 
+$ curl http://localhost:5000/api/students 
+$ cat flask_app.log 
+ 
+8. Watch the log live while sending more requests 
+# Terminal 1 —> watch the log 
+$ tail -f flask_app.log 
+ 
+# Terminal 2 —> send requests 
+$ curl http://localhost:5000/api/students 
+$ curl http://localhost:5000/api/students/1 
+$ curl http://localhost:5000/api/students/999 
+ 
+Department of SWE & CYS                                                                        SE202L Development Operations Lab                                          
+Page 84 of 112 
+ 
+9. Stop the Flask process 
+$ kill $(ps aux | grep 'python3 app.py' | grep -v grep | awk '{print $2}') 
+ 
+Part C: systemd Service 
+10. Create and enable a systemd service for your Flask app (use the template from Section 2.2) 
+$ sudo nano /etc/systemd/system/flaskapp.service 
+# Fill in your username and correct path 
+$ sudo systemctl daemon-reload 
+$ sudo systemctl start flaskapp 
+$ sudo systemctl status flaskapp 
+ 
+11. Test that it survives, stop it, then check it restarts 
+$ sudo systemctl stop flaskapp 
+$ sudo systemctl start flaskapp 
+$ sudo journalctl -u flaskapp --since '2 min ago' 
+
+
+
+---LAB9--
+---------------------------------------------------------------
+# Search for an image on Docker Hub 
+$ docker search python 
+ 
+# Download (pull) an image without running it 
+$ docker pull python:3.11-slim 
+ 
+# List all images stored on your machine
+$ docker images 
+ 
+# Remove an image 
+$ docker rmi python:3.11-slim 
+ 
+# Run a container interactively (opens a shell inside it) 
+$ docker run -it ubuntu bash 
+ 
+# Run in detached mode (background) with a name 
+$ docker run -d --name my-server nginx 
+ 
+# Run with port mapping: host_port:container_port 
+$ docker run -d -p 8080:80 --name web nginx 
+ 
+# Run with an environment variable 
+$ docker run -d -e MY_VAR=hello nginx 
+ 
+# Open a shell inside a RUNNING container 
+$ docker exec -it my-server bash 
+
+3 Managing the Container Lifecycle 
+# List running containers 
+$ docker ps 
+ 
+# List ALL containers (including stopped ones) 
+$ docker ps -a 
+ 
+# Stop a running container (graceful) 
+$ docker stop my-server 
+ 
+# Start a stopped container 
+$ docker start my-server 
+ 
+# Remove a stopped container 
+$ docker rm my-server 
+ 
+# Force remove a running container 
+$ docker rm -f my-server 
+ 
+# View logs from a container 
+$ docker logs my-server 
+ 
+# Follow logs live 
+ docker logs -f my-server 
+-
+
+# Start all services (builds images if needed) 
+$ docker compose up 
+ 
+# Start in detached mode (background) 
+$ docker compose up -d 
+ 
+# View logs from all services 
+$ docker compose logs 
+ 
+# Follow logs for a specific service 
+$ docker compose logs -f api 
+ 
+# List running compose services 
+$ docker compose ps 
+ 
+# Stop all services (containers remain) 
+$ docker compose stop 
+ 
+# Stop AND remove containers, networks 
+$ docker compose down 
+ 
+# Rebuild images and restart 
+$ docker compose up --build -d
+
+
+--
+1. Verify Docker is installed and working 
+$ docker --version 
+$ docker run hello-world 
+ 
+2. Pull and run an nginx web server container 
+Department of SWE & CYS                                                                       SE202L Development Operations Lab                              
+Page 93 of 112 
+ 
+$ docker pull nginx:alpine 
+$ docker run -d -p 8080:80 --name my-nginx nginx:alpine 
+ 
+3. Verify it is running and visit it in the browser 
+$ docker ps 
+$ curl http://localhost:8080 
+ 
+4. Explore inside the running container 
+$ docker exec -it my-nginx sh 
+# ls /usr/share/nginx/html 
+# exit 
+ 
+5. View its logs and then stop and remove it 
+$ docker logs my-nginx 
+$ docker stop my-nginx 
+$ docker rm my-nginx 
+ 
+Part B: Containerise the Flask App 
+6. Set up the project with Dockerfile and requirements.txt 
+$ mkdir -p ~/devops/week9/flask-api 
+$ cp ~/devops/week5/app.py ~/devops/week9/flask-api/ 
+$ cd ~/devops/week9/flask-api 
+$ echo 'flask' > requirements.txt 
+$ echo 'flask-cors' >> requirements.txt 
+ 
+7. Create the Dockerfile (use the template from Section 4.2) 
+$ nano Dockerfile 
+ 
+8. Build the image and verify 
+$ docker build -t flask-api:v1 . 
+$ docker images | grep flask-api 
+ 
+9. Run the container and test with curl 
+$ docker run -d -p 5000:5000 --name flask-api flask-api:v1 
+$ curl http://localhost:5000/api/students 
+$ docker logs flask-api 
+ 
+Part C: Docker Compose: Two Services 
+10. Create the fullstack project structure 
+$ mkdir -p ~/devops/week9/fullstack/api 
+$ mkdir -p ~/devops/week9/fullstack/frontend 
+$ cp ~/devops/week9/flask-api/* ~/devops/week9/fullstack/api/ 
+$ cd ~/devops/week9/fullstack 
+ 
+11. Create a simple frontend index.html 
+$ nano frontend/index.html 
+Department of SWE & CYS                                                                       SE202L Development Operations Lab                              
+Page 94 of 112 
+ 
+# Add: <!DOCTYPE html><html><body> 
+#   <h1>Memoona Full Stack App</h1> 
+#   <p>Frontend served by nginx. API on port 5000.</p> 
+# </body></html> 
+ 
+12. Create the docker-compose.yml (use template from Section 5.2) 
+$ nano docker-compose.yml 
+ 
+13. Launch both services and verify 
+$ docker compose up -d 
+$ docker compose ps 
+$ curl http://localhost:5000/api/students   # Flask API 
+$ curl http://localhost:8080                # Frontend via nginx 
+ 
+14. View combined logs and then bring everything down 
+$ docker compose logs 
+$ docker compose down 
+
+
+--- LAB10---
+. Clone it locally if needed and navigate into it 
+$ git clone https://github.com/your-username/flask-api.git 
+$ cd flask-api 
+ 
+3. Ensure requirements.txt includes all needed packages 
+$ cat requirements.txt 
+# Should contain: flask, flask-cors, pytest 
+ 
+4. Ensure app.py has the /api/health endpoint. If not, add it: 
+# Add inside app.py 
+@app.route('/api/health', methods=['GET']) 
+def health(): 
+    return jsonify({'status': 'ok', 'message': 'Flask is running'}), 200 
+ 
+Part B: Write and Run Tests Locally 
+5. Create test_app.py with all 5 tests from Section 3.2 
+$ nano test_app.py 
+ 
+6. Install pytest and run tests locally — all 5 must pass before continuing 
+$ pip3 install pytest 
+$ python -m pytest test_app.py -v 
+Department of SWE & CYS                                                                        SE202L Development Operations Lab                                          
+Page 103 of 112 
+ 
+ 
+Part C: Set Up the GitHub Actions Workflow 
+7. Create the workflows directory and CI file 
+$ mkdir -p .github/workflows 
+$ nano .github/workflows/ci.yml 
+ 
+8. Write the full two-job pipeline from Sections 4.2 and 4.3 
+ 
+9. Commit and push everything to trigger the pipeline 
+$ git add . 
+$ git commit -m "Add CI pipeline with tests and Docker build" 
+$ git push origin main 
+ 
+10. Open GitHub in the browser → Actions tab → watch both jobs run 
+ 
+11. Deliberately break a test to see the pipeline fail, then fix it 
+# Edit test_app.py — change a correct assertion to a wrong one 
+# e.g. change assert response.status_code == 200 to assert 
+response.status_code == 999 
+$ git add test_app.py 
+$ git commit -m "Intentional failing test" 
+$ git push origin main 
+# Watch the pipeline fail in the Actions tab 
+# Then revert the change, push again, and watch it go green 
+
+
+-------LAB11-----
+
+# Connect to your EC2 instance 
+$ ssh -i ~/.ssh/devops-key.pem ubuntu@YOUR_PUBLIC_IP 
+ 
+# Example: 
+$ ssh -i ~/.ssh/devops-key.pem ubuntu@54.123.45.67 
+ 
+# First connection: type 'yes' to accept the host fingerprint 
+# You will see a prompt like: 
+# ubuntu@ip-172-31-xx-xx:~$ 
+
+
+# Run these on the EC2 instance (after SSH connection) 
+$ sudo apt update && sudo apt upgrade -y 
+ 
+# Verify the OS 
+$ lsb_release -a 
+ 
+# Check available disk and memory 
+$ df -h 
+$ free -h
+
+
+You have two ways to get your Flask project onto the EC2 server: 
+ 
+Method 1: Clone from GitHub (Recommended) 
+# On the EC2 instance 
+$ sudo apt install -y git 
+$ git clone https://github.com/your-username/flask-api.git 
+$ cd flask-api 
+$ ls   # Verify app.py, Dockerfile, requirements.txt are present 
+ 
+Method 2: Copy files using scp (from your local machine) 
+# Run this on your LOCAL machine, not on EC2 
+$ scp -i ~/.ssh/devops-key.pem -r ~/devops/week5/ 
+ubuntu@YOUR_PUBLIC_IP:~/flask-api/ 
+ 
+# scp = secure copy (uses SSH to transfer files) 
+# -r = recursive (copy entire directory) 
+# Source path  :  Destination path on EC2
+
+You have two ways to get your Flask project onto the EC2 server: 
+ 
+Method 1: Clone from GitHub (Recommended) 
+# On the EC2 instance 
+$ sudo apt install -y git 
+$ git clone https://github.com/your-username/flask-api.git 
+$ cd flask-api 
+$ ls   # Verify app.py, Dockerfile, requirements.txt are present 
+ 
+Method 2: Copy files using scp (from your local machine) 
+# Run this on your LOCAL machine, not on EC2 
+$ scp -i ~/.ssh/devops-key.pem -r ~/devops/week5/ 
+ubuntu@YOUR_PUBLIC_IP:~/flask-api/ 
+ 
+# scp = secure copy (uses SSH to transfer files) 
+# -r = recursive (copy entire directory) 
+# Source path  :  Destination path on EC2
+ docker logs flask-api 
+
+# Run these on YOUR LOCAL MACHINE 
+# Replace YOUR_PUBLIC_IP with the EC2 public IP address 
+ 
+# Test the health endpoint 
+$ curl http://YOUR_PUBLIC_IP:5000/api/health 
+ 
+# Test get all students 
+$ curl http://YOUR_PUBLIC_IP:5000/api/students 
+ 
+# Add a new student from your local machine 
+$ curl -X POST http://YOUR_PUBLIC_IP:5000/api/students \ 
+     -H 'Content-Type: application/json' \ 
+     -d '{"name": "Memoona", "grade": "A"}' 
+ 
+# Also open in your browser: 
+# http://YOUR_PUBLIC_IP:5000/api/students 
+
+3 Monitoring the Running Application 
+# On the EC2 instance, watch live container logs 
+$ docker logs -f flask-api 
+ 
+# Check how much CPU and memory the container uses 
+$ docker stats flask-api 
+ 
+# Check server resource usage 
+$ free -h 
+$ df -h 
+$ uptime 
+ 
+# Check which ports are open 
+$ ss -tulnp | grep :5000

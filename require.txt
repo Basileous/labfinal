@@ -1,0 +1,1035 @@
+$ pwd 
+/home/memoona 
+
+$ ls 
+$ ls -l          # Long format — shows permissions, size, date 
+$ ls -a          # Show all files including hidden ones (start with .) 
+$ ls -la         # Combine both flags 
+
+$ cd /home/memoona/projects   # Go to an absolute path 
+$ cd projects             # Go to a relative path 
+$ cd ..                   # Go up one level (to parent directory) 
+$ cd ~                    # Go to your home directory 
+$ cd -                    # Go back to previous directory 
+
+$ mkdir myfolder                  # Create a single folder 
+$ mkdir -p projects/devops/week1  # Create nested folders at once 
+ 
+$ touch notes.txt 
+$ touch app.py config.yml   # Create multiple files at once 
+ 
+$ cp notes.txt backup.txt          # Copy a file 
+$ cp -r myfolder myfolder_backup   # Copy a directory (-r means recursive) 
+ 
+$ mv notes.txt documents/notes.txt  # Move file to another directory 
+$ mv oldname.txt newname.txt        # Rename a file 
+ 
+$ rm notes.txt           # Delete a file 
+$ rm -r myfolder         # Delete a directory and all its contents 
+ 
+cat  Print File Contents 
+$ cat notes.txt
+
+less  Read Long Files Page by Page 
+$ less longfile.txt   # Press Space to scroll down, q to quit 
+ 
+head and tail  Read Beginning or End of File 
+$ head -10 logfile.txt   # First 10 lines 
+$ tail -10 logfile.txt   # Last 10 lines 
+ 
+4.5 Getting Help 
+Every Linux command has built-in documentation. You never need to memorize everything, you 
+just need to know how to look it up. 
+$ man ls        # Full manual for ls (press q to quit) 
+$ ls --help     # Quick summary of options 
+ 
+---Lab 2---
+Symbolic Mode 
+Symbolic mode uses letters to add (+), remove (-), or set (=) permissions. 
+$ chmod u+x script.sh       # Add execute for the owner (user) 
+$ chmod g-w notes.txt       # Remove write from the group 
+$ chmod o+r report.txt      # Add read for others 
+$ chmod a+x deploy.sh       # Add execute for all (user, group, others) 
+$ chmod u=rwx,g=rx,o= file  # Set exact permissions for each category 
+ 	
+
+Numeric (Octal) Mode 
+Numeric mode uses a 3-digit number. Each digit is calculated by adding: r=4, w=2, x=1. 
+ 
+Number Binary Permissions 
+7 111 rwx  read, write, execute 
+6 110 rw-  read and write only 
+5 101 r-x  read and execute only 
+4 100 r--  read only 
+0 000 ---  no permissions at all 
+ 
+$ chmod 755 script.sh    # Owner: rwx  Group: r-x  Others: r-x 
+$ chmod 644 notes.txt    # Owner: rw-  Group: r--  Others: r-- 
+$ chmod 700 secret.txt   # Owner: rwx  Group: ---  Others: --- 
+
+1.5 Changing Ownership with chown 
+chown (change owner) changes who owns a file. Only the root (admin) user can change file 
+ownership. 
+$ chown memoona notes.txt            # Change owner to memoona 
+$ chown memoona:developers notes.txt # Change owner to memoona, group to 
+developers 
+$ chown -R memoona myproject/    # Change owner recursively for a whole 
+folder
+
+2.2 Viewing User Information 
+$ whoami              # Print your current username 
+$ id                  # Show your UID, GID, and all groups you belong to 
+$ id memoona              # Show user info for a specific user 
+$ cat /etc/passwd     # List all users on the system 
+$ groups              # Show which groups you belong to 
+ 
+2.3 Managing Users 
+These commands require root (admin) privileges. To run as root, prefix with sudo (Super User 
+DO). 
+$ sudo adduser sara           # Create a new user named sara (interactive) 
+$ sudo passwd sara            # Set or change sara's password 
+$ sudo userdel sara           # Delete user sara (keeps home folder) 
+$ sudo userdel -r sara        # Delete user AND their home folder 
+ 
+2.4 Managing Groups 
+$ sudo groupadd developers     # Create a new group 
+$ sudo usermod -aG developers memoona  #Add user memoona to the developers 
+group 
+$ sudo gpasswd -d memoona developers   # Remove memoona from developers 
+group 
+$ sudo groupdel developers     # Delete the group 
+$ cat /etc/group               # List all groups on the system
+
+$ sudo apt update           # Run apt update as root 
+$ sudo -i                   # Open a full root shell (use with caution) 
+$ exit                      # Leave the root shell and return to normal 
+user 
+
+$ ps                  # Show processes in your current terminal session 
+$ ps aux              # Show ALL processes from ALL users with resource 
+usage 
+$ ps aux | grep python  # Filter to show only Python processes 
+ 
+$ top           # Live process viewer (press q to quit, k to kill a 
+process) 
+$ htop          # Improved version of top with color (may need: sudo apt 
+install htop) 
+
+3.4 Killing Processes 
+Sometimes a process freezes or misbehaves and must be stopped manually. 
+$ kill 1234           # Send a gentle stop signal to process with PID 1234 
+$ kill -9 1234        # Force kill  use when regular kill does not work 
+$ killall python3     # Kill all processes named python3 
+$ pkill -f myapp      # Kill processes matching the name myapp 
+
+
+3.5 Running Processes in the Background 
+By default, when you run a command it runs in the foreground, your terminal is occupied until it 
+finishes. You can run commands in the background so your terminal stays free. 
+$ python3 server.py &       # The & at the end sends it to the background 
+$ jobs                      # List all background jobs in current terminal 
+$ fg                        # Bring the most recent background job to 
+foreground 
+$ bg                        # Resume a stopped job in the background 
+Ctrl + Z                    # Pause (suspend) the currently running 
+foreground job 
+Ctrl + C                    # Terminate the currently running foreground 
+job 
+
+
+$ df -h              # Show disk usage for all mounted drives (h = human 
+readable) 
+$ du -sh *           # Show size of each file/folder in current directory 
+$ du -sh /var/log    # Show total size of a specific directory 
+ 
+4.2 Checking Memory Usage 
+$ free -h            # Show total, used, and free RAM (h = human readable) 
+$ cat /proc/meminfo  # Detailed raw memory information from the kernel 
+
+ 
+4.3 Checking CPU Information 
+$ nproc              # How many CPU cores are available 
+$ lscpu              # Detailed CPU information (model, architecture, 
+cores) 
+$ uptime             # How long the system has been running + load average 
+ 
+$ cat /var/log/syslog          # General system log 
+$ sudo tail -f /var/log/syslog # Watch live log updates as they happen 
+$ dmesg                        # Kernel ring buffer — hardware and boot 
+messages 
+$ dmesg | tail -20             # Last 20 kernel messages 
+
+Part A: File Permissions 
+1. Create a practice directory and navigate into it 
+$ mkdir ~/devops/week2 && cd ~/devops/week2 
+ 
+2. Create a shell script file and a text file 
+$ touch deploy.sh config.txt 
+ 
+3. View current permissions 
+$ ls -l 
+ 
+4. Add execute permission to the script for the owner 
+Department of SWE & CYS                                                                        SE202L Development Operations Lab                                          
+Page 25 of 112 
+ 
+$ chmod u+x deploy.sh 
+$ ls -l   # Verify the x appears in owner column 
+ 
+5. Set config.txt to owner read/write only (no group, no others) 
+$ chmod 600 config.txt 
+$ ls -l   # Should show: -rw------- 
+ 
+6. Write something into deploy.sh and make it executable 
+$ echo '#!/bin/bash' > deploy.sh 
+$ echo 'echo Hello from deploy script' >> deploy.sh 
+$ ./deploy.sh    # Run it — should print: Hello from deploy script 
+ 
+Part B: Users and Groups 
+7. Check who you are and your group memberships 
+$ whoami 
+$ id 
+$ groups 
+ 
+8. Create a new group called devteam 
+$ sudo groupadd devteam 
+$ cat /etc/group | grep devteam 
+ 
+9. Add yourself to the devteam group 
+$ sudo usermod -aG devteam $USER 
+$ id   # Should now show devteam in the groups list 
+ 
+Part C: Process Monitoring 
+10. View all running processes 
+$ ps aux | head -20   # Show first 20 lines 
+ 
+11. Start a background process (a harmless infinite loop) 
+$ sleep 300 & 
+$ jobs   # You should see the sleep job listed 
+ 
+12. Find and kill the sleep process 
+$ ps aux | grep sleep   # Note the PID 
+$ kill <PID> 
+$ jobs   # Should show it as terminated 
+ 
+13. Check system resources 
+$ df -h 
+$ free -h 
+$ uptime 
+
+
+~/devops/week9/fullstack/
+│
+├── api/
+│   ├── app.py
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── frontend/
+│   └── index.html
+│
+└── docker-compose.yml
+
+
+---LAB8 TASK--
+cd ~/devops/week5/flask-project
+
+nohup python3 app.py > ~/devops/week8/flask_production.log 2>&1 &
+
+ps aux | grep app.py
+
+ss -tulnp | grep :5000
+
+curl http://localhost:5000/api/students
+
+curl -X POST http://localhost:5000/api/students \
+-H "Content-Type: application/json" \
+-d '{"name":"Memoona","grade":"A"}'
+
+curl http://localhost:5000/api/health
+
+cat ~/devops/week8/flask_production.log
+
+grep '404' ~/devops/week8/flask_production.log
+
+kill PID
+
+nohup python3 app.py > ~/devops/week8/flask_production.log 2>&1 &
+
+---LAB9TASK---
+mkdir -p ~/devops/week9/fullstack/api
+mkdir -p ~/devops/week9/fullstack/frontend
+
+cd ~/devops/week9/fullstack
+
+docker compose up -d
+
+docker compose ps
+
+curl http://localhost:5000/api/students
+
+curl http://localhost:8080
+
+docker compose logs
+
+docker compose down
+
+docker ps -a
+
+---------LAB10TASK-------
+Step 1: Project Structure
+Your repository must contain this structure:
+flask-project/│├── app.py├── requirements.txt├── Dockerfile├── .dockerignore├── test_app.py│└── .github/    └── workflows/        └── ci.yml
+
+Step 2: Create app.py
+Create:
+app.py
+Content:
+from flask import Flask, jsonify, requestfrom flask_cors import CORSapp = Flask(__name__)CORS(app)students = [    {"id": 1, "name": "Ali", "grade": "A"},    {"id": 2, "name": "Sara", "grade": "B"}]@app.route('/api/health', methods=['GET'])def health():    return jsonify({"status": "ok"}), 200@app.route('/api/students', methods=['GET'])def get_students():    return jsonify(students), 200@app.route('/api/students/<int:id>', methods=['GET'])def get_student(id):    for student in students:        if student["id"] == id:            return jsonify(student), 200    return jsonify({"error": "Student not found"}), 404@app.route('/api/students', methods=['POST'])def add_student():    data = request.get_json()    if 'name' not in data or 'grade' not in data:        return jsonify({"error": "Missing field"}), 400    new_student = {        "id": len(students) + 1,        "name": data['name'],        "grade": data['grade']    }    students.append(new_student)    return jsonify(new_student), 201if __name__ == '__main__':    app.run(host='0.0.0.0', port=5000)
+
+Step 3: Create requirements.txt
+Create:
+requirements.txt
+Content:
+flaskflask-corspytest
+
+Step 4: Create .dockerignore
+Create:
+.dockerignore
+Content:
+__pycache__*.pyc*.log.env
+
+Step 5: Create Dockerfile
+Create:
+Dockerfile
+Content:
+FROM python:3.11-slimWORKDIR /appCOPY requirements.txt .RUN pip install -r requirements.txtCOPY . .EXPOSE 5000CMD ["python", "app.py"]
+
+Step 6: Create test_app.py
+Create:
+test_app.py
+Content:
+import pytestfrom app import app@pytest.fixturedef client():    app.config['TESTING'] = True    with app.test_client() as client:        yield client# Test 1: Health checkdef test_health_check(client):    response = client.get('/api/health')    assert response.status_code == 200    data = response.get_json()    assert data['status'] == 'ok'# Test 2: Get all studentsdef test_get_students(client):    response = client.get('/api/students')    assert response.status_code == 200    data = response.get_json()    assert isinstance(data, list)# Test 3: Student not founddef test_get_student_not_found(client):    response = client.get('/api/students/9999')    assert response.status_code == 404# Test 4: Add valid studentdef test_add_student(client):    new_student = {        "name": "Memoona",        "grade": "A"    }    response = client.post(        '/api/students',        json=new_student    )    assert response.status_code == 201    data = response.get_json()    assert data['name'] == 'Memoona'# Test 5: Missing fielddef test_add_student_missing_field(client):    response = client.post(        '/api/students',        json={"name": "Sara"}    )    assert response.status_code == 400
+
+Step 7: Create GitHub Workflow Folder
+Run:
+mkdir -p .github/workflows
+
+Step 8: Create ci.yml
+Create:
+.github/workflows/ci.yml
+Content:
+name: Flask CI Pipelineon:  push:    branches: [ main ]  pull_request:    branches: [ main ]jobs:  test:    name: Run Tests    runs-on: ubuntu-latest    steps:      - name: Checkout repository        uses: actions/checkout@v4      - name: Set up Python 3.11        uses: actions/setup-python@v5        with:          python-version: '3.11'      - name: Install dependencies        run: |          pip install --upgrade pip          pip install -r requirements.txt      - name: Run pytest        run: python -m pytest test_app.py -v  build-docker:    name: Build Docker Image    runs-on: ubuntu-latest    needs: test    steps:      - name: Checkout repository        uses: actions/checkout@v4      - name: Build Docker image        run: docker build -t flask-api:${{ github.sha }} .      - name: Run Docker container        run: |          docker run -d -p 5000:5000 --name flask-container \            flask-api:${{ github.sha }}          sleep 5          curl --fail http://localhost:5000/api/health          docker stop flask-container          docker rm flask-container
+
+Step 9: Initialize Git Repository
+If not already initialized:
+git init
+
+Step 10: Add GitHub Remote
+Example:
+git remote add origin https://github.com/YOUR_USERNAME/flask-project.git
+
+Step 11: Add Files to Git
+git add .
+
+Step 12: Commit Files
+git commit -m "Added CI pipeline and Docker build"
+
+Step 13: Push to GitHub
+git branch -M maingit push -u origin main
+
+Step 14: Open GitHub Actions
+Go to your repository on GitHub.
+Click:
+Actions
+
+What Instructor Will Check
+
+✅ Check 1 — Green Checkmarks
+You must show:
+✔ Run Tests✔ Build Docker Image
+Both jobs must pass.
+
+✅ Check 2 — Pytest Logs
+Click workflow run.
+Open:
+Run pytest
+Expected output:
+test_health_check PASSEDtest_get_students PASSEDtest_get_student_not_found PASSEDtest_add_student PASSEDtest_add_student_missing_field PASSED
+All 5 tests visible.
+
+✅ Check 3 — Docker Build Logs
+Open:
+Build Docker image
+Instructor checks:
+flask-api:${{ github.sha }}
+Example SHA:
+flask-api:7d3e9b12
+This proves image built using commit hash.
+
+Step 15: Verify Locally Before Push
+Run locally:
+
+Run Flask App
+python app.py
+
+Run Tests
+pytest -v
+
+Build Docker Image
+docker build -t flask-api .
+
+Run Docker Container
+docker run -p 5000:5000 flask-api
+
+Test API
+curl http://localhost:5000/api/health
+Expected:
+{"status":"ok"}
+
+-----LAB10TASK2------
+Step 1: Introduce a Bug in app.py
+
+Open:
+
+app.py
+
+Find this route:
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"}), 200
+Change It to Return 500
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"}), 500
+Why This Breaks the Pipeline
+
+Your test expects:
+
+assert response.status_code == 200
+
+But Flask now returns:
+
+500
+
+So pytest fails.
+
+Step 2: Push Broken Code to GitHub
+
+Run:
+
+git add .
+
+git commit -m "Introduced health endpoint bug"
+
+git push origin main
+Step 3: Watch Pipeline Fail
+
+Go to GitHub Actions
+.
+
+Open the latest workflow run.
+
+You should see:
+
+❌ Run Tests FAILED
+Step 4: View Exact Error Message
+
+Click:
+
+Run pytest
+
+Expected error:
+
+E       assert 500 == 200
+E        +  where 500 = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.status_code
+What This Means
+Value	Meaning
+Expected	200
+Actual	500
+
+GitHub Actions correctly caught the bug automatically.
+
+Step 5: Fix the Bug
+
+Restore correct code:
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"}), 200
+Push Again
+git add .
+
+git commit -m "Fixed health endpoint"
+
+git push origin main
+Expected Result
+
+GitHub Actions now shows:
+
+✔ Run Tests
+✔ Build Docker Image
+
+Pipeline becomes green again.
+
+Step 6: Add Third Job — report
+
+Open:
+
+.github/workflows/ci.yml
+
+Add this BELOW build-docker job:
+
+  report:
+
+    name: Pipeline Report
+
+    runs-on: ubuntu-latest
+
+    needs: build-docker
+
+    steps:
+
+      - name: Print pipeline summary
+        run: echo "Pipeline complete for commit: ${{ github.sha }}"
+Explanation
+Part	Meaning
+report	New job
+needs: build-docker	Runs only after Docker job succeeds
+${{ github.sha }}	Current commit hash
+Example Output in Logs
+Pipeline complete for commit: 7d3e9b12
+Step 7: Create GitHub Secret
+
+Go to your repository in GitHub
+.
+
+Navigation
+Repository
+→ Settings
+→ Secrets and variables
+→ Actions
+→ New repository secret
+Create Secret
+Field	Value
+Name	LAB_SECRET
+Secret	yourname-devops-week10
+
+Example:
+
+basil-devops-week10
+
+Click:
+
+Add secret
+Step 8: Use Secret Safely in Workflow
+
+Inside your report job add:
+
+      - name: Load GitHub Secret
+        env:
+          LAB_SECRET: ${{ secrets.LAB_SECRET }}
+        run: echo "Secret loaded successfully"
+VERY IMPORTANT
+
+DO NOT do this:
+
+echo $LAB_SECRET
+
+because secrets must never appear in logs.
+
+Correct Safe Output
+
+GitHub Actions log shows only:
+
+Secret loaded successfully
+
+The secret value stays hidden.
+
+Step 9: Final report Job
+
+Your complete job becomes:
+
+  report:
+
+    name: Pipeline Report
+
+    runs-on: ubuntu-latest
+
+    needs: build-docker
+
+    steps:
+
+      - name: Print pipeline summary
+        run: echo "Pipeline complete for commit: ${{ github.sha }}"
+
+      - name: Load GitHub Secret
+        env:
+          LAB_SECRET: ${{ secrets.LAB_SECRET }}
+        run: echo "Secret loaded successfully"
+Step 10: Create ci_notes.txt
+
+Create:
+
+ci_notes.txt
+
+Content:
+
+If the test job fails, the build-docker job will not run because the workflow uses:
+
+needs: test
+
+This creates a dependency between jobs.
+
+This is important because it prevents broken or untested code from being packaged into a Docker image and deployed. It improves software reliability, automation safety, and CI/CD quality control.
+Step 11: Commit Final Changes
+
+Run:
+
+git add .
+
+git commit -m "Added report job and GitHub secret usage"
+
+git push origin main
+Step 12: Verify Final Workflow
+
+Go again to GitHub Actions
+.
+
+You should now see:
+
+✔ Run Tests
+✔ Build Docker Image
+✔ Pipeline Report
+
+---------LAB11TASK1---------
+Lab Task 1 — Live Cloud Deployment (AWS EC2 + Docker + Flask)
+
+This task deploys your Flask CRUD API publicly on an AWS EC2 Ubuntu server using Docker.
+
+The instructor must be able to access:
+
+http://YOUR_PUBLIC_IP:5000/api/health
+
+from the internet.
+
+Step 1: Launch EC2 Instance
+
+Go to AWS EC2 Console
+
+Create Instance with These Settings
+Setting	Value
+Instance Name	user-devops-server
+AMI	Ubuntu Server 22.04 LTS
+Instance Type	t2.micro
+Key Pair Name	devops-key
+Download Key Pair
+
+AWS downloads:
+
+devops-key.pem
+
+Save it safely.
+
+Step 2: Configure Security Group
+
+In EC2 Security Group add these inbound rules:
+
+Type	Protocol	Port	Source
+SSH	TCP	22	My IP
+Custom TCP	TCP	5000	Anywhere (0.0.0.0/0)
+Why Port 5000?
+
+Your Flask Docker container runs on:
+
+Port 5000
+
+Without opening it, the API is inaccessible publicly.
+
+Step 3: SSH into EC2
+
+Move PEM file into .ssh folder:
+
+mv ~/Downloads/devops-key.pem ~/.ssh/
+Set Correct Permissions
+chmod 400 ~/.ssh/devops-key.pem
+Connect to EC2
+ssh -i ~/.ssh/devops-key.pem ubuntu@YOUR_PUBLIC_IP
+
+Example:
+
+ssh -i ~/.ssh/devops-key.pem ubuntu@18.206.77.120
+Successful Login
+
+You should see:
+
+Welcome to Ubuntu 22.04 LTS
+Step 4: Update Server
+
+Run:
+
+sudo apt update && sudo apt upgrade -y
+Purpose
+Command	Purpose
+apt update	Refresh package list
+apt upgrade	Install updates
+Step 5: Install Docker
+Install Required Packages
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+Add Docker GPG Key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+Add Docker Repository
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu jammy stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+Update Packages Again
+sudo apt update
+Install Docker
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+Verify Docker Installation
+docker --version
+
+Expected:
+
+Docker version 26.x.x
+Allow Current User to Use Docker
+sudo usermod -aG docker ubuntu
+Apply Group Changes
+newgrp docker
+Test Docker
+docker run hello-world
+Step 6: Clone Flask Repository
+
+Install Git:
+
+sudo apt install git -y
+Clone Repository
+git clone YOUR_GITHUB_REPOSITORY_URL
+
+Example:
+
+git clone https://github.com/basiljoseph/flask-api.git
+Move into Project
+cd flask-api
+Step 7: Build Docker Image
+
+Run:
+
+docker build -t flask-api:v1 .
+Explanation
+Part	Meaning
+docker build	Build image
+-t	Tag
+flask-api:v1	Image name + version
+.	Current directory
+Verify Image
+docker images
+
+Expected:
+
+flask-api   v1
+Step 8: Run Docker Container
+
+Run:
+
+docker run -d -p 5000:5000 --restart=always --name flask-api flask-api:v1
+IMPORTANT CORRECTION
+
+The assignment text shows:
+
+-restart=always
+
+Correct syntax is:
+
+--restart=always
+
+(two dashes)
+
+Explanation
+Option	Meaning
+-d	Run in background
+-p 5000:5000	Port mapping
+--restart=always	Auto restart after reboot
+--name flask-api	Container name
+Verify Container Running
+docker ps
+
+Expected:
+
+flask-api
+Step 9: Test from LOCAL MACHINE
+
+Exit EC2 or open another terminal on your local computer.
+
+Health Check
+
+Run:
+
+curl http://YOUR_PUBLIC_IP:5000/api/health
+
+Example:
+
+curl http://18.206.77.120:5000/api/health
+Expected Output
+{"status":"ok"}
+Step 10: POST New Student from Local Machine
+
+Run:
+
+curl -X POST http://YOUR_PUBLIC_IP:5000/api/students \
+-H "Content-Type: application/json" \
+-d '{"name":"Memoona","grade":"A"}'
+Expected Output
+{
+  "id": 3,
+  "name": "Memoona",
+  "grade": "A"
+}
+Step 11: GET All Students
+
+Run:
+
+curl http://YOUR_PUBLIC_IP:5000/api/students
+Expected Output
+[
+  {
+    "id":1,
+    "name":"Ali",
+    "grade":"A"
+  },
+  {
+    "id":2,
+    "name":"Sara",
+    "grade":"B"
+  },
+  {
+    "id":3,
+    "name":"Memoona",
+    "grade":"A"
+  }
+]
+Full Command Summary
+Local Machine
+chmod 400 ~/.ssh/devops-key.pem
+
+ssh -i ~/.ssh/devops-key.pem ubuntu@YOUR_PUBLIC_IP
+Inside EC2
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu jammy stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+
+sudo usermod -aG docker ubuntu
+
+newgrp docker
+
+docker run hello-world
+
+sudo apt install git -y
+
+git clone YOUR_GITHUB_REPOSITORY_URL
+
+cd flask-api
+
+docker build -t flask-api:v1 .
+
+docker run -d -p 5000:5000 --restart=always --name flask-api flask-api:v1
+Local Machine Testing
+curl http://YOUR_PUBLIC_IP:5000/api/health
+
+curl -X POST http://YOUR_PUBLIC_IP:5000/api/students \
+-H "Content-Type: application/json" \
+-d '{"name":"Memoona","grade":"A"}'
+
+curl http://YOUR_PUBLIC_IP:5000/api/students
+
+
+--------------------LAB11TASK2-------
+Step 1: SSH into EC2 Instance
+From your local machine:
+ssh -i ~/.ssh/devops-key.pem ubuntu@YOUR_PUBLIC_IP
+Example:
+ssh -i ~/.ssh/devops-key.pem ubuntu@18.206.77.120
+
+Step 2: Record Required Server Investigation Commands
+You must run ALL commands on the EC2 instance.
+
+🔹 Check Running Containers
+docker ps
+
+Example Output
+CONTAINER ID   IMAGE           COMMAND         STATUS7f23d91ab2     flask-api:v1    "python app.py" Up 10 minutes
+
+🔹 Check Container Logs
+docker logs flask-api
+
+Example Output
+* Running on http://0.0.0.0:5000127.0.0.1 - - [13/May/2026] "GET /api/health HTTP/1.1" 200 -
+
+🔹 Verify Port 5000 Listening
+ss -tulnp | grep :5000
+
+Example Output
+tcp LISTEN 0 128 0.0.0.0:5000
+
+🔹 Check Disk Usage
+df -h
+
+Example Output
+Filesystem      Size  Used Avail Use%/dev/root        20G  6G    13G   31%
+
+🔹 Check Memory Usage
+free -h
+
+Example Output
+Mem:  980Mi  420Mi  300Mi
+
+🔹 Check System Uptime
+uptime
+
+Example Output
+10:30:12 up 2 hours, 15 minutes
+
+Step 3: Test API from LOCAL Machine
+Exit EC2 or open another terminal on your computer.
+
+Run Curl Command
+curl -i http://YOUR_PUBLIC_IP:5000/api/students
+Example:
+curl -i http://18.206.77.120:5000/api/students
+
+Example Full HTTP Response
+HTTP/1.1 200 OKServer: Werkzeug/3.0.1 Python/3.11Content-Type: application/jsonContent-Length: 85[  {    "id":1,    "name":"Ali",    "grade":"A"  }]
+
+Important
+The instructor wants:
+✅ Status code
+✅ Headers
+✅ JSON body
+That’s why you MUST use:
+-i
+
+Step 4: Stop and Restart Container
+Back on EC2 instance:
+
+Stop Container
+docker stop flask-api
+
+Verify It Stopped
+docker ps
+Container should disappear.
+
+Restart Container
+docker start flask-api
+
+Verify Running Again
+docker ps
+
+Test API Again from Local Machine
+curl http://YOUR_PUBLIC_IP:5000/api/health
+Expected:
+{"status":"ok"}
+
+Step 5: Test --restart=always
+This verifies Docker auto-start recovery after reboot.
+
+Reboot EC2
+On EC2:
+sudo reboot
+
+Wait About 60 Seconds
+The SSH connection will disconnect.
+
+SSH Back In
+ssh -i ~/.ssh/devops-key.pem ubuntu@YOUR_PUBLIC_IP
+
+Verify Container Auto-Started
+docker ps
+Expected:
+flask-api   Up
+
+Test API Again
+From local machine:
+curl http://YOUR_PUBLIC_IP:5000/api/health
+Expected:
+{"status":"ok"}
+
+Why This Works
+Because container was started using:
+--restart=always
+Docker automatically restarts container after reboot.
+
+Step 6: Create deployment_report.md
+Inside your repository create:
+deployment_report.md
+
+Sample Complete Report
+# Deployment Report## EC2 Information- Public IP: 18.206.77.120- Instance Type: t2.micro- Region: us-east-1- Operating System: Ubuntu 22.04- Docker Version: Docker version 26.1.1---# Docker Investigation## docker ps```bashdocker ps
+Output:
+CONTAINER ID   IMAGE           STATUS7f23d91ab2     flask-api:v1    Up 10 minutes
+
+docker logs flask-api
+docker logs flask-api
+Output:
+* Running on http://0.0.0.0:5000127.0.0.1 - - [13/May/2026] "GET /api/health HTTP/1.1" 200 -
+
+ss -tulnp | grep :5000
+ss -tulnp | grep :5000
+Output:
+tcp LISTEN 0 128 0.0.0.0:5000
+
+df -h
+df -h
+Output:
+Filesystem      Size  Used Avail Use%/dev/root        20G   6G    13G   31%
+
+free -h
+free -h
+Output:
+Mem: 980Mi 420Mi 300Mi
+
+uptime
+uptime
+Output:
+up 2 hours, 15 minutes
+
+API Testing
+GET /api/students
+curl -i http://18.206.77.120:5000/api/students
+Response:
+HTTP/1.1 200 OKContent-Type: application/json[  {    "id":1,    "name":"Ali",    "grade":"A"  }]
+
+Container Restart Test
+Commands used:
+docker stop flask-apidocker start flask-api
+The container restarted successfully and the API became reachable again.
+
+Automatic Restart Test
+The EC2 instance was rebooted using:
+sudo reboot
+After reconnecting through SSH, the container was automatically running because it was started with:
+--restart=always
+
+Internet Request Flow Explanation
+When a user accesses the API from the internet, the request first reaches the AWS EC2 public IP address. The EC2 Security Group allows incoming traffic on port 5000. Docker maps port 5000 from the host machine to the Flask container. The Flask application inside the container receives the HTTP request, processes it, and sends a JSON response back through Docker and AWS networking to the user's browser or curl command.
+---# Step 7: Commit Report to GitHubRun:```bash id="h134"git add deployment_report.mdgit commit -m "Added deployment report"git push origin main
+
+Step 8: Show Instructor
+You must demonstrate BOTH simultaneously:
+
+✅ GitHub Repository
+Show:
+deployment_report.md
+inside repository.
+
+✅ Live API
+From browser or terminal:
+curl http://YOUR_PUBLIC_IP:5000/api/health
+Expected:
+{"status":"ok"}
